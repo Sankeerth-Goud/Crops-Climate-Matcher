@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crops Climate Matcher</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9fafb;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #2563eb;
+      color: white;
+      padding: 15px 20px;
+      text-align: center;
+    }
+    main {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 20px;
+      padding: 20px;
+    }
+    @media (max-width: 768px) {
+      main { grid-template-columns: 1fr; }
+    }
+    section, form {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 15px;
+    }
+    h2 { margin-top: 0; }
+    label { display: block; margin: 8px 0 4px; font-weight: bold; }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover { background: #1e40af; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    .card h3 { margin: 0 0 6px; }
+    .small { font-size: 0.9em; color: #555; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Crops ↔ Climate Matcher</h1>
+    <p>Find crops suitable for your climate conditions</p>
+  </header>
+
+  <main>
+    <!-- Filter section -->
+    <section>
+      <h2>Filter Conditions</h2>
+      <label>Climate</label>
+      <select id="climate">
+        <option>Tropical</option>
+        <option>Subtropical</option>
+        <option>Temperate</option>
+        <option>Arid</option>
+        <option>Semi-arid</option>
+        <option>Highland</option>
+      </select>
+
+      <label>Average Temperature (°C): <span id="tempValue">25</span></label>
+      <input type="range" min="0" max="45" value="25" id="temp" />
+
+      <label>Annual Rainfall (mm): <span id="rainValue">1000</span></label>
+      <input type="range" min="0" max="5000" value="1000" id="rain" />
+
+      <label>Soil Type</label>
+      <input type="text" id="soil" placeholder="e.g. Loamy" />
+
+      <label>Search</label>
+      <input type="text" id="search" placeholder="Crop name or keyword" />
+
+      <button id="filterBtn">Apply Filter</button>
+      <button id="resetBtn" style="background:#6b7280;">Reset</button>
+
+      <hr>
+
+      <h3>Add New Crop</h3>
+      <form id="addCropForm">
+        <input name="name" placeholder="Crop name" required />
+        <input name="climates" placeholder="Climates (comma separated)" />
+        <input name="minTemp" type="number" placeholder="Min Temp (°C)" />
+        <input name="maxTemp" type="number" placeholder="Max Temp (°C)" />
+        <input name="minRainfall" type="number" placeholder="Min Rainfall (mm)" />
+        <input name="maxRainfall" type="number" placeholder="Max Rainfall (mm)" />
+        <input name="soil" placeholder="Soil types (comma separated)" />
+        <input name="season" placeholder="Season" />
+        <textarea name="description" placeholder="Description"></textarea>
+        <button type="submit">Add Crop</button>
+      </form>
+    </section>
+
+    <!-- Results -->
+    <section>
+      <h2>Suitable Crops</h2>
+      <div id="results" class="grid"></div>
+    </section>
+  </main>
+
+  <script>
+    const crops = [
+      { name: "Rice", climates: ["Tropical","Subtropical"], minTemp: 20, maxTemp: 35, minRainfall: 1000, maxRainfall: 3000, soil: ["Clay","Loamy"], season: "Kharif", description: "Needs high water and warm temperature." },
+      { name: "Wheat", climates: ["Temperate","Subtropical"], minTemp: 10, maxTemp: 25, minRainfall: 300, maxRainfall: 1000, soil: ["Loamy","Silt"], season: "Rabi", description: "Cool-season cereal crop." },
+      { name: "Maize", climates: ["Tropical","Subtropical","Temperate"], minTemp: 15, maxTemp: 32, minRainfall: 500, maxRainfall: 1200, soil: ["Loamy","Sandy loam"], season: "Kharif", description: "Versatile cereal crop." },
+      { name: "Cotton", climates: ["Subtropical","Semi-arid"], minTemp: 20, maxTemp: 35, minRainfall: 400, maxRainfall: 800, soil: ["Loamy","Sandy"], season: "Kharif", description: "Fiber crop needing warm climate." },
+      { name: "Tea", climates: ["Tropical","Highland"], minTemp: 10, maxTemp: 30, minRainfall: 1200, maxRainfall: 4000, soil: ["Acidic","Loamy"], season: "Perennial", description: "Needs cool misty climate." },
+      { name: "Millet", climates: ["Arid","Semi-arid"], minTemp: 20, maxTemp: 38, minRainfall: 200, maxRainfall: 600, soil: ["Sandy","Loamy"], season: "Kharif", description: "Drought-tolerant grain." },
+      { name: "Potato", climates: ["Temperate","Subtropical"], minTemp: 7, maxTemp: 25, minRainfall: 500, maxRainfall: 1500, soil: ["Loamy","Silt"], season: "Rabi", description: "Root crop, cool weather." },
+      { name: "Sugarcane", climates: ["Tropical","Subtropical"], minTemp: 20, maxTemp: 36, minRainfall: 1000, maxRainfall: 2500, soil: ["Loamy","Clay"], season: "Perennial", description: "High water requirement." },
+      { name: "Barley", climates: ["Temperate"], minTemp: 5, maxTemp: 25, minRainfall: 200, maxRainfall: 800, soil: ["Loamy","Sandy loam"], season: "Rabi", description: "Cool-season cereal." },
+      { name: "Groundnut", climates: ["Tropical","Subtropical","Semi-arid"], minTemp: 20, maxTemp: 32, minRainfall: 500, maxRainfall: 1200, soil: ["Sandy loam","Loamy"], season: "Kharif", description: "Legume crop preferring warm temp." }
+    ];
+
+    const resultsDiv = document.getElementById('results');
+    const tempRange = document.getElementById('temp');
+    const rainRange = document.getElementById('rain');
+    const tempValue = document.getElementById('tempValue');
+    const rainValue = document.getElementById('rainValue');
+    const filterBtn = document.getElementById('filterBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const addCropForm = document.getElementById('addCropForm');
+
+    tempRange.oninput = () => tempValue.textContent = tempRange.value;
+    rainRange.oninput = () => rainValue.textContent = rainRange.value;
+
+    function displayCrops(list) {
+      resultsDiv.innerHTML = '';
+      if (list.length === 0) {
+        resultsDiv.innerHTML = '<p>No crops match your selected conditions.</p>';
+        return;
+      }
+      list.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `
+          <h3>${c.name}</h3>
+          <p class='small'>${c.description}</p>
+          <ul class='small'>
+            <li><b>Climates:</b> ${c.climates.join(', ')}</li>
+            <li><b>Temp:</b> ${c.minTemp}°C - ${c.maxTemp}°C</li>
+            <li><b>Rainfall:</b> ${c.minRainfall}-${c.maxRainfall} mm</li>
+            <li><b>Soil:</b> ${c.soil.join(', ')}</li>
+            <li><b>Season:</b> ${c.season}</li>
+          </ul>
+        `;
+        resultsDiv.appendChild(div);
+      });
+    }
+
+    function filterCrops() {
+      const climate = document.getElementById('climate').value;
+      const avgTemp = +tempRange.value;
+      const rainfall = +rainRange.value;
+      const soil = document.getElementById('soil').value.trim().toLowerCase();
+      const search = document.getElementById('search').value.trim().toLowerCase();
+
+      const matched = crops.filter(c => {
+        const climateMatch = c.climates.includes(climate);
+        const tempMatch = avgTemp >= c.minTemp - 2 && avgTemp <= c.maxTemp + 2;
+        const rainMatch = rainfall >= c.minRainfall - 100 && rainfall <= c.maxRainfall + 200;
+        const soilMatch = soil ? c.soil.some(s => s.toLowerCase().includes(soil)) : true;
+        const searchMatch = search ? c.name.toLowerCase().includes(search) || c.description.toLowerCase().includes(search) : true;
+        return climateMatch && tempMatch && rainMatch && soilMatch && searchMatch;
+      });
+      displayCrops(matched);
+    }
+
+    filterBtn.onclick = filterCrops;
+    resetBtn.onclick = () => {
+      document.getElementById('climate').value = 'Tropical';
+      tempRange.value = 25;
+      rainRange.value = 1000;
+      document.getElementById('soil').value = '';
+      document.getElementById('search').value = '';
+      tempValue.textContent = 25;
+      rainValue.textContent = 1000;
+      displayCrops(crops);
+    };
+
+    addCropForm.onsubmit = (e) => {
+      e.preventDefault();
+      const formData = new FormData(addCropForm);
+      const newCrop = {
+        name: formData.get('name'),
+        climates: formData.get('climates').split(',').map(s => s.trim()),
+        minTemp: +formData.get('minTemp'),
+        maxTemp: +formData.get('maxTemp'),
+        minRainfall: +formData.get('minRainfall'),
+        maxRainfall: +formData.get('maxRainfall'),
+        soil: formData.get('soil').split(',').map(s => s.trim()),
+        season: formData.get('season'),
+        description: formData.get('description'),
+      };
+      crops.push(newCrop);
+      alert('New crop added!');
+      addCropForm.reset();
+      displayCrops(crops);
+    };
+
+    // Show all on load
+    displayCrops(crops);
+  </script>
+</body>
+</html>
